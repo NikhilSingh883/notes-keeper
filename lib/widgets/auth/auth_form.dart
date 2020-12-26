@@ -291,6 +291,7 @@ class _AuthFormState extends State<AuthForm> {
                   TextFormField(
                     controller: _confirmPass,
                     autocorrect: false,
+                    style: TextStyle(color: Colors.white54),
                     key: ValueKey('confirmPassword'),
                     validator: (value) {
                       if (value != _pass.text) return 'Password doesnt match';

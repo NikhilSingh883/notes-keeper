@@ -1,8 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:notes/models/note.dart';
 import 'package:notes/screens/noteDetail.dart';
 import 'package:notes/size_config.dart';
+
+import '../main.dart';
 
 class NotesTile extends StatelessWidget {
   final Note note;
@@ -21,7 +24,7 @@ class NotesTile extends StatelessWidget {
     return InkWell(
       onTap: () {
         Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-          return NotesDetailScreen(note, docID);
+          return NotesDetailScreen(note, docID, url);
         }));
       },
       child: Container(

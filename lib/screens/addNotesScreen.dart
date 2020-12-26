@@ -4,9 +4,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:notes/screens/noteDetail.dart';
 import 'package:notes/screens/notesScreen.dart';
 import 'package:notes/size_config.dart';
+
+import '../main.dart';
 
 class AddNotesScreen extends StatefulWidget {
   static const String routeName = '/add-notes';
@@ -17,6 +22,9 @@ class AddNotesScreen extends StatefulWidget {
 class _AddNotesScreenState extends State<AddNotesScreen> {
   TextEditingController _title = TextEditingController();
   TextEditingController _desc = TextEditingController();
+  TextEditingController _hour = TextEditingController();
+  TextEditingController _minutes = TextEditingController();
+  TextEditingController _seconds = TextEditingController();
 
   File _pickedImage = null;
 
@@ -153,6 +161,246 @@ class _AddNotesScreenState extends State<AddNotesScreen> {
         });
   }
 
+  void _showTimerPicker(context) {
+    showModalBottomSheet(
+        backgroundColor: Colors.transparent,
+        context: context,
+        builder: (BuildContext bc) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(30),
+                topRight: Radius.circular(30),
+              ),
+            ),
+            padding: EdgeInsets.symmetric(
+              vertical: SizeConfig.heightMultiplier * 3,
+              horizontal: SizeConfig.widthMultiplier * 5,
+            ),
+            height: SizeConfig.heightMultiplier * 40,
+            child: new Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _hour,
+                    style: TextStyle(
+                        fontSize: SizeConfig.heightMultiplier * 2,
+                        color: Colors.white),
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'HH',
+                      hintStyle: TextStyle(
+                        color: Colors.white,
+                        fontSize: SizeConfig.heightMultiplier * 2,
+                      ),
+                    ),
+                  ),
+                ),
+                Container(
+                  margin:
+                      EdgeInsets.only(top: SizeConfig.heightMultiplier * 1.2),
+                  child: Text(
+                    'hour',
+                    style: TextStyle(
+                      fontSize: SizeConfig.heightMultiplier,
+                      color: Colors.yellow,
+                    ),
+                  ),
+                ),
+                Container(
+                  margin:
+                      EdgeInsets.only(top: SizeConfig.heightMultiplier * 1.2),
+                  child: Text(
+                    ':',
+                    style: TextStyle(
+                      fontSize: SizeConfig.heightMultiplier * 2,
+                      color: Colors.yellow,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: TextFormField(
+                    controller: _minutes,
+                    style: TextStyle(
+                        fontSize: SizeConfig.heightMultiplier * 2,
+                        color: Colors.white),
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'MM',
+                      hintStyle: TextStyle(
+                        color: Colors.white,
+                        fontSize: SizeConfig.heightMultiplier * 2,
+                      ),
+                    ),
+                  ),
+                ),
+                Container(
+                  margin:
+                      EdgeInsets.only(top: SizeConfig.heightMultiplier * 1.2),
+                  child: Text(
+                    'min',
+                    style: TextStyle(
+                      fontSize: SizeConfig.heightMultiplier,
+                      color: Colors.yellow,
+                    ),
+                  ),
+                ),
+                Container(
+                  margin:
+                      EdgeInsets.only(top: SizeConfig.heightMultiplier * 1.2),
+                  child: Text(
+                    ':',
+                    style: TextStyle(
+                      fontSize: SizeConfig.heightMultiplier * 2,
+                      color: Colors.yellow,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: TextFormField(
+                    controller: _seconds,
+                    style: TextStyle(
+                        fontSize: SizeConfig.heightMultiplier * 2,
+                        color: Colors.white),
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'SS',
+                      hintStyle: TextStyle(
+                        color: Colors.white,
+                        fontSize: SizeConfig.heightMultiplier * 2,
+                      ),
+                    ),
+                  ),
+                ),
+                Container(
+                  margin:
+                      EdgeInsets.only(top: SizeConfig.heightMultiplier * 1.2),
+                  child: Text(
+                    'sec',
+                    style: TextStyle(
+                      fontSize: SizeConfig.heightMultiplier,
+                      color: Colors.yellow,
+                    ),
+                  ),
+                ),
+                InkWell(
+                  onTap: () async {
+                    if (isNumeric(_minutes.text.trim()) &&
+                        isNumeric(_hour.text.trim()) &&
+                        isNumeric(_seconds.text.trim())) {
+                      int hour =
+                          _hour.text == '' ? 0 : int.parse(_hour.text.trim());
+                      int min = _minutes.text == ''
+                          ? 0
+                          : int.parse(_minutes.text.trim());
+                      int sec = _seconds.text == ''
+                          ? 0
+                          : int.parse(_seconds.text.trim());
+                      DateTime scheduledNotificationDateTime =
+                          DateTime.now().add(
+                        Duration(
+                          seconds: sec,
+                          hours: hour,
+                          minutes: min,
+                        ),
+                      );
+
+                      scheduleReminder(scheduledNotificationDateTime);
+                      Navigator.pop(context);
+                    } else {
+                      showAlertDialog(context);
+                    }
+                  },
+                  child: Column(children: [
+                    Container(
+                      child: new Icon(
+                        Icons.timelapse,
+                        size: SizeConfig.heightMultiplier * 5,
+                        color: Colors.red[500],
+                      ),
+                    ),
+                    Container(
+                      margin: EdgeInsets.symmetric(
+                          horizontal: SizeConfig.widthMultiplier * 3),
+                      child: Text(
+                        'Tap',
+                        style: TextStyle(
+                            fontSize: SizeConfig.heightMultiplier * 1.5,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ]),
+                ),
+              ],
+            ),
+          );
+        });
+  }
+
+  void scheduleReminder(DateTime scheduledNotificationDateTime) async {
+    var androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      'alarm_notif',
+      'alarm_notif',
+      'Channel for Alarm notification',
+      icon: 'notes_logo',
+      // sound: RawResourceAndroidNotificationSound('a_long_cold_sting'),
+      largeIcon: DrawableResourceAndroidBitmap('notes_logo'),
+    );
+
+    var iOSPlatformChannelSpecifics = IOSNotificationDetails(
+        sound: 'a_long_cold_sting.wav',
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true);
+    var platformChannelSpecifics = NotificationDetails(
+        androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
+    await flutterLocalNotificationsPlugin.schedule(
+        0,
+        _title.text.trim(),
+        _desc.text.trim(),
+        scheduledNotificationDateTime,
+        platformChannelSpecifics);
+  }
+
+  bool isNumeric(String s) {
+    if (s == '') return true;
+    if (s == null) {
+      return false;
+    }
+    return double.parse(s, (e) => null) != null;
+  }
+
+  showAlertDialog(BuildContext context) {
+    // set up the button
+    Widget okButton = FlatButton(
+      child: Text("OK"),
+      onPressed: () {
+        Navigator.pop(context);
+      },
+    );
+
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      title: Text("Wrong Format"),
+      content: Text("Please provide proper timings"),
+      actions: [
+        okButton,
+      ],
+    );
+
+    // show the dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -190,16 +438,43 @@ class _AddNotesScreenState extends State<AddNotesScreen> {
               ),
               Row(
                 children: [
-                  InkWell(
-                    onTap: () {
-                      _showPicker(context);
-                    },
-                    child: CircleAvatar(
-                      radius: SizeConfig.heightMultiplier * 5,
-                      backgroundImage: _pickedImage != null
-                          ? FileImage(_pickedImage)
-                          : AssetImage('assets/images/demo.jpg'),
-                    ),
+                  Column(
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          _showPicker(context);
+                        },
+                        child: CircleAvatar(
+                          radius: SizeConfig.heightMultiplier * 4,
+                          backgroundImage: _pickedImage != null
+                              ? FileImage(_pickedImage)
+                              : AssetImage('assets/images/demo.jpg'),
+                        ),
+                      ),
+                      SizedBox(
+                        height: SizeConfig.heightMultiplier,
+                      ),
+                      InkWell(
+                        onTap: () {
+                          _showPicker(context);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(SizeConfig.widthMultiplier),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(
+                                SizeConfig.widthMultiplier),
+                          ),
+                          child: Text(
+                            'Add Image',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                  SizedBox(
+                    height: SizeConfig.heightMultiplier,
                   ),
                   Expanded(
                     child: Container(
@@ -273,13 +548,49 @@ class _AddNotesScreenState extends State<AddNotesScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Color(0xff171719),
-        onPressed: () {
-          addNotes();
-          Navigator.of(context).pushReplacementNamed(NotesScreen.routeName);
-        },
-        child: Icon(Icons.save),
+      floatingActionButton: Row(
+        children: [
+          InkWell(
+            onTap: () {
+              _showTimerPicker(context);
+            },
+            child: Container(
+              margin: EdgeInsets.only(left: SizeConfig.widthMultiplier * 8),
+              padding: EdgeInsets.symmetric(
+                  horizontal: SizeConfig.widthMultiplier * 2),
+              height: SizeConfig.heightMultiplier * 5,
+              decoration: BoxDecoration(
+                borderRadius:
+                    BorderRadius.circular(SizeConfig.widthMultiplier * 5),
+                color: Colors.red[300],
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.timer),
+                  Container(
+                    padding:
+                        EdgeInsets.only(left: SizeConfig.widthMultiplier * 2),
+                    child: Text(
+                      'Set Timer',
+                      style:
+                          TextStyle(fontSize: SizeConfig.heightMultiplier * 2),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
+          Spacer(),
+          FloatingActionButton(
+            backgroundColor: Color(0xff171719),
+            onPressed: () {
+              addNotes();
+
+              Navigator.of(context).pushReplacementNamed(NotesScreen.routeName);
+            },
+            child: Icon(Icons.save),
+          ),
+        ],
       ),
     );
   }

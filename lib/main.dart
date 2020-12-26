@@ -1,26 +1,46 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:notes/screens/addNotesScreen.dart';
+import 'package:notes/screens/loading_screen.dart';
 import 'package:notes/screens/notesScreen.dart';
 import 'package:notes/screens/searchScreen.dart';
 import 'package:notes/screens/sign_in_screen.dart';
 import 'package:notes/screens/sign_up_screen.dart';
 import 'package:notes/size_config.dart';
 
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp();
-  // SystemChrome.setPreferredOrientations([
-  //   DeviceOrientation.portraitUp,
-  //   DeviceOrientation.portraitDown,
-  // ]);
+
+  var initializationSettingsAndroid =
+      AndroidInitializationSettings('notes_logo');
+  var initializationSettingsIOS = IOSInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+      onDidReceiveLocalNotification:
+          (int id, String title, String body, String payload) async {});
+
+  var initializationSettings = InitializationSettings(
+      initializationSettingsAndroid, initializationSettingsIOS);
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings,
+      onSelectNotification: (String payload) async {
+    if (payload != null) {
+      debugPrint('notification payload: ' + payload);
+    }
+  });
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -37,6 +57,8 @@ class MyApp extends StatelessWidget {
               home: StreamBuilder(
                 stream: FirebaseAuth.instance.authStateChanges(),
                 builder: (ctx, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting)
+                    return LoadingScreen();
                   if (snapshot.hasData) return NotesScreen();
                   return SignInScreen();
                 },
